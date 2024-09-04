@@ -1535,4 +1535,24 @@ public class NesCpu
     }
 #endregion        
 
+    public void nmi()
+    {
+        write((ushort)(0x0100 + stkp), (byte)((pc >> 8) & 0x00FF));
+        stkp--;
+        write((ushort)(0x0100 + stkp), (byte)(pc & 0x00FF));
+        stkp--;
+
+        SetFlag(FLAGS6502.B, 0);
+        SetFlag(FLAGS6502.U, 1);
+        SetFlag(FLAGS6502.I, 1);
+        write((ushort)(0x0100 + stkp), status);
+        stkp--;
+
+        addr_abs = 0xFFFA;
+        ushort lo = read((ushort)(addr_abs + 0));
+        ushort hi = read((ushort)(addr_abs + 1));
+        pc = (ushort)((hi << 8) | lo);
+
+        cycles = 8;
+    }
 }

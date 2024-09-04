@@ -4,7 +4,10 @@ public class NesBus
     public NesPPU ppu;
     public NesRom rom;
     public byte[] cpuRam = new byte[2048];
+    byte[] controller = new byte[2];
+
     uint sysClockCounter = 0;
+	byte[] controller_state = new byte[2];
 
     public NesBus()
     {
@@ -41,6 +44,10 @@ public class NesBus
             // which is the equivalent of addr % 8.
             ppu.cpuWrite((ushort)(addr & 0x0007), data);
         }
+      	else if (addr >= 0x4016 && addr <= 0x4017)
+        {
+            controller_state[addr & 0x0001] = controller[addr & 0x0001];
+        }
     }
 	public byte cpuRead(ushort addr, bool bReadOnly = false)
     {
@@ -58,6 +65,11 @@ public class NesBus
         {
             // PPU Address range, mirrored every 8
             data = ppu.cpuRead((ushort)(addr & 0x0007), bReadOnly);
+        }
+      	else if (addr >= 0x4016 && addr <= 0x4017)
+        {
+            data = (byte)((controller_state[addr & 0x0001] & 0x80) > 0 ? 1 : 0);
+            controller_state[addr & 0x0001] <<= 1;
         }
 
         return data;
@@ -95,6 +107,16 @@ public class NesBus
         {
             cpu.clock();
         }
+
+        // The PPU is capable of emitting an interrupt to indicate the
+        // vertical blanking period has been entered. If it has, we need
+        // to send that irq to the CPU.
+        if (ppu.nmi)
+        {
+            ppu.nmi = false;
+            cpu.nmi();
+        }
+
 
         sysClockCounter++;
     }

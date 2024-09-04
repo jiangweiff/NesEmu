@@ -21,6 +21,7 @@ public class Nes
         rom = new NesRom();
         rom.Load(filename);
         bus.loadRom(rom);
+        bus.reset();
     }
 
 }

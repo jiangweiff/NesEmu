@@ -98,14 +98,14 @@ public class NesRom
 		public fixed byte unused[5];
     }
 
-   	enum MIRROR
+   	public enum MIRROR
 	{
 		HORIZONTAL,
 		VERTICAL,
 		ONESCREEN_LO,
 		ONESCREEN_HI,
 	}
-    MIRROR mirror = MIRROR.HORIZONTAL;
+    public MIRROR mirror = MIRROR.HORIZONTAL;
 
    	byte nMapperID = 0;
 	byte nPRGBanks = 0;

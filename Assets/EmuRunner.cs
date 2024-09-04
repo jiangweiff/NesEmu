@@ -18,6 +18,9 @@ public class EmuRunner : MonoBehaviour
         var fn = EditorUtility.OpenFilePanel("open rom", "", "");
         emu.LoadGame(fn);
 
+		var mapAsm = emu.bus.cpu.Disassemble(0x0000, 0xFFFF);
+        Debug.Log("a");
+
         // // initialize screen;
         // screenpixels = new Transform[64*32];
         // for(int x = 0; x < 64; ++x) {
@@ -66,6 +69,17 @@ public class EmuRunner : MonoBehaviour
              } while(!emu.bus.cpu.IsComplete());
         }
 
+        if (Input.GetKeyDown(KeyCode.F)) {
+            do {
+                emu.bus.clock();
+             } while(!emu.bus.ppu.frame_complete);
+             do {
+                emu.bus.clock();
+             } while(!emu.bus.cpu.IsComplete());
+             emu.bus.ppu.frame_complete = false;
+        }
+
+
         UpdateInput();
     }
 
@@ -78,8 +92,7 @@ public class EmuRunner : MonoBehaviour
 
     void FixedUpdate()
     {
-        emu.bus.clock();
-        // emu.EmulateCycle();
+        // emu.bus.clock();
     }
 
     void Test()
@@ -127,7 +140,8 @@ public class EmuRunner : MonoBehaviour
     void OnGUI()
     {
    		DrawRam(2, 2, 0x0000, 16, 16); // ram
-		DrawRam(2, 182, 0x8000, 16, 16); // rom
+		DrawRam(2, 182, 0x2000, 16, 16); // vram
+		// DrawRam(2, 182, 0x8000, 16, 16); // rom
 		DrawCpu(2, 350);
     }
 
@@ -163,7 +177,7 @@ public class EmuRunner : MonoBehaviour
             " " + (cpu.GetFlag(NesCpu.FLAGS6502.C) > 0 ? "<color=green>C</color>" : "<color=red>C</color>") + 
             "\n" + $"PC: ${cpu.pc:x4}" +
             "\n" + $"A: ${cpu.a:x2}" +
-            "\n" + $"X: ${cpu.y:x2}" +
+            "\n" + $"X: ${cpu.x:x2}" +
             "\n" + $"Y: ${cpu.y:x2}" +
             "\n" + $"STKP: ${cpu.stkp:x4}";
         GUI.Label(new Rect(x, y, 640, 100), text);       

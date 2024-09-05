@@ -3,11 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class EmuRunner : MonoBehaviour
 {
     Nes emu = new Nes();
-    public Transform cube;
+    public RawImage rawImage;
     Transform[] screenpixels;
     Dictionary<KeyCode, int> keyMapper = new Dictionary<KeyCode, int>();
     // Start is called before the first frame update
@@ -17,6 +18,8 @@ public class EmuRunner : MonoBehaviour
         // Test();
         var fn = EditorUtility.OpenFilePanel("open rom", "", "");
         emu.LoadGame(fn);
+
+        rawImage.texture = emu.bus.ppu.texScreen;
 
 		var mapAsm = emu.bus.cpu.Disassemble(0x0000, 0xFFFF);
         Debug.Log("a");
@@ -56,6 +59,7 @@ public class EmuRunner : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        emu.bus.ppu.texScreen.Apply(false);
         // if (emu.drawFlag) {
         //     for (int i = 0; i < 64*32; ++i) {
         //         screenpixels[i].gameObject.SetActive(emu.gfx[i] == 1);

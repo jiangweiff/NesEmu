@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public class EmuRunner : MonoBehaviour
 {
     Nes emu = new Nes();
-    public RawImage rawImage;
+    public RawImage imgScreen, imgPattern1, imgPattern2;
     Transform[] screenpixels;
     Dictionary<KeyCode, int> keyMapper = new Dictionary<KeyCode, int>();
     // Start is called before the first frame update
@@ -19,7 +19,9 @@ public class EmuRunner : MonoBehaviour
         var fn = EditorUtility.OpenFilePanel("open rom", "", "");
         emu.LoadGame(fn);
 
-        rawImage.texture = emu.bus.ppu.texScreen;
+        imgScreen.texture = emu.bus.ppu.texScreen;
+        imgPattern1.texture = emu.bus.ppu.texPatternTable[0];
+        imgPattern2.texture = emu.bus.ppu.texPatternTable[1];
 
 		var mapAsm = emu.bus.cpu.Disassemble(0x0000, 0xFFFF);
         Debug.Log("a");
@@ -60,12 +62,8 @@ public class EmuRunner : MonoBehaviour
     void Update()
     {
         emu.bus.ppu.texScreen.Apply(false);
-        // if (emu.drawFlag) {
-        //     for (int i = 0; i < 64*32; ++i) {
-        //         screenpixels[i].gameObject.SetActive(emu.gfx[i] == 1);
-        //     }
-        //     emu.drawFlag = false;
-        // }
+        emu.bus.ppu.GetPatternTable(0,0);
+        emu.bus.ppu.GetPatternTable(1,0);
 
         if (Input.GetKeyDown(KeyCode.Space)) {
             do {

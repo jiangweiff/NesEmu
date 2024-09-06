@@ -14,6 +14,10 @@ public class NesPPU
     Color32[] palScreen = new Color32[0x40];
 
     public Texture2D texScreen = new Texture2D(256, 240, TextureFormat.RGBA32, false);
+    public Texture2D[] texPatternTable = new Texture2D[2] { 
+        new Texture2D(128, 128, TextureFormat.RGBA32, false),
+        new Texture2D(128, 128, TextureFormat.RGBA32, false),
+    };
 
     class RegBase
     {
@@ -203,6 +207,97 @@ public class NesPPU
         palScreen[0x3D] = new Color32(160, 162, 160, 0xFF);
         palScreen[0x3E] = new Color32(0, 0, 0, 0xFF);
         palScreen[0x3F] = new Color32(0, 0, 0, 0xFF);
+    }
+
+    public Texture2D GetPatternTable(byte i, byte palette)
+    {
+        // This function draw the CHR ROM for a given pattern table into
+        // an olc::Sprite, using a specified palette. Pattern tables consist
+        // of 16x16 "tiles or characters". It is independent of the running
+        // emulation and using it does not change the systems state, though
+        // it gets all the data it needs from the live system. Consequently,
+        // if the game has not yet established palettes or mapped to relevant
+        // CHR ROM banks, the sprite may look empty. This approach permits a 
+        // "live" extraction of the pattern table exactly how the NES, and 
+        // ultimately the player would see it.
+
+        // A tile consists of 8x8 pixels. On the NES, pixels are 2 bits, which
+        // gives an index into 4 different colours of a specific palette. There
+        // are 8 palettes to choose from. Colour "0" in each palette is effectively
+        // considered transparent, as those locations in memory "mirror" the global
+        // background colour being used. This mechanics of this are shown in 
+        // detail in ppuRead() & ppuWrite()
+
+        // Characters on NES
+        // ~~~~~~~~~~~~~~~~~
+        // The NES stores characters using 2-bit pixels. These are not stored sequentially
+        // but in singular bit planes. For example:
+        //
+        // 2-Bit Pixels       LSB Bit Plane     MSB Bit Plane
+        // 0 0 0 0 0 0 0 0	  0 0 0 0 0 0 0 0   0 0 0 0 0 0 0 0
+        // 0 1 1 0 0 1 1 0	  0 1 1 0 0 1 1 0   0 0 0 0 0 0 0 0
+        // 0 1 2 0 0 2 1 0	  0 1 1 0 0 1 1 0   0 0 1 0 0 1 0 0
+        // 0 0 0 0 0 0 0 0 =  0 0 0 0 0 0 0 0 + 0 0 0 0 0 0 0 0
+        // 0 1 1 0 0 1 1 0	  0 1 1 0 0 1 1 0   0 0 0 0 0 0 0 0
+        // 0 0 1 1 1 1 0 0	  0 0 1 1 1 1 0 0   0 0 0 0 0 0 0 0
+        // 0 0 0 2 2 0 0 0	  0 0 0 1 1 0 0 0   0 0 0 1 1 0 0 0
+        // 0 0 0 0 0 0 0 0	  0 0 0 0 0 0 0 0   0 0 0 0 0 0 0 0
+        //
+        // The planes are stored as 8 bytes of LSB, followed by 8 bytes of MSB
+
+        // Loop through all 16x16 tiles
+        for (ushort nTileY = 0; nTileY < 16; nTileY++)
+        {
+            for (ushort nTileX = 0; nTileX < 16; nTileX++)
+            {
+                // Convert the 2D tile coordinate into a 1D offset into the pattern
+                // table memory.
+                ushort nOffset = (ushort)(nTileY * 256 + nTileX * 16);
+
+                // Now loop through 8 rows of 8 pixels
+                for (ushort row = 0; row < 8; row++)
+                {
+                    // For each row, we need to read both bit planes of the character
+                    // in order to extract the least significant and most significant 
+                    // bits of the 2 bit pixel value. in the CHR ROM, each character
+                    // is stored as 64 bits of lsb, followed by 64 bits of msb. This
+                    // conveniently means that two corresponding rows are always 8
+                    // bytes apart in memory.
+                    byte tile_lsb = ppuRead((ushort)(i * 0x1000 + nOffset + row + 0x0000));
+                    byte tile_msb = ppuRead((ushort)(i * 0x1000 + nOffset + row + 0x0008));
+
+                    // Now we have a single row of the two bit planes for the character
+                    // we need to iterate through the 8-bit words, combining them to give
+                    // us the final pixel index
+                    for (ushort col = 0; col < 8; col++)
+                    {
+                        // We can get the index value by simply adding the bits together
+                        // but we're only interested in the lsb of the row words because...
+                        byte pixel = (byte)((tile_lsb & 0x01) + (tile_msb & 0x01));
+
+                        // ...we will shift the row words 1 bit right for each column of
+                        // the character.
+                        tile_lsb >>= 1; tile_msb >>= 1;
+
+                        // Now we know the location and NES pixel value for a specific location
+                        // in the pattern table, we can translate that to a screen colour, and an
+                        // (x,y) location in the sprite
+                        texPatternTable[i].SetPixel
+                        (
+                            nTileX * 8 + (7 - col), // Because we are using the lsb of the row word first
+                                                    // we are effectively reading the row from right
+                                                    // to left, so we need to draw the row "backwards"
+                            nTileY * 8 + row, 
+                            GetColourFromPaletteRam(palette, pixel)
+                        );
+                    }
+                }
+            }
+        }
+
+        // Finally return the updated sprite representing the pattern table
+        texPatternTable[i].Apply();
+        return texPatternTable[i];
     }
 
     ref Color32 GetColourFromPaletteRam(byte palette, byte pixel)

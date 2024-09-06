@@ -87,7 +87,7 @@ public class NesPPU
     PPUCTRL control = new PPUCTRL();
 
     [StructLayout(LayoutKind.Explicit, Pack = 1)]
-    class loopy_register
+    struct loopy_register
     {
         [FieldOffset(0)] public byte coarse_x; // 5b
         [FieldOffset(1)] public byte coarse_y; // 5b
@@ -129,10 +129,10 @@ public class NesPPU
 	byte bg_next_tile_attrib = 0x00;
 	byte bg_next_tile_lsb    = 0x00;
 	byte bg_next_tile_msb    = 0x00;
-	short bg_shifter_pattern_lo = 0x0000;
-	short bg_shifter_pattern_hi = 0x0000;
-	short bg_shifter_attrib_lo  = 0x0000;
-	short bg_shifter_attrib_hi  = 0x0000;
+	ushort bg_shifter_pattern_lo = 0x0000;
+	ushort bg_shifter_pattern_hi = 0x0000;
+	ushort bg_shifter_attrib_lo  = 0x0000;
+	ushort bg_shifter_attrib_hi  = 0x0000;
 
     NesRom rom;
     public bool frame_complete = false;
@@ -427,8 +427,8 @@ public class NesPPU
         {
         case 0x0000: // Control
             control.CopyFromByte(data);
-            tram_addr.nametable_x = control.nametable_x;
-            tram_addr.nametable_y = control.nametable_y;
+            tram_addr.nametable_x = (byte)(control.nametable_x & 0x1);
+            tram_addr.nametable_y = (byte)(control.nametable_y & 0x1);
             break;
         case 0x0001: // Mask
             mask.CopyFromByte(data);
@@ -628,7 +628,7 @@ public class NesPPU
 				// Leaving nametable so wrap address round
 				vram_addr.coarse_x = 0;
 				// Flip target nametable bit
-				vram_addr.nametable_x = (byte)~vram_addr.nametable_x;
+				vram_addr.nametable_x = (byte)(~vram_addr.nametable_x & 0b1);
 			}
 			else
 			{
@@ -681,7 +681,7 @@ public class NesPPU
 					// We do, so reset coarse y offset
 					vram_addr.coarse_y = 0;
 					// And flip the target nametable bit
-					vram_addr.nametable_y = (byte)~vram_addr.nametable_y;
+					vram_addr.nametable_y = (byte)(~vram_addr.nametable_y & 0x1);
 				}
 				else if (vram_addr.coarse_y == 31)
 				{
@@ -708,7 +708,7 @@ public class NesPPU
 		// Ony if rendering is enabled
 		if (mask.render_background > 0 || mask.render_sprites > 0)
 		{
-			vram_addr.nametable_x = tram_addr.nametable_x;
+			vram_addr.nametable_x = (byte)(tram_addr.nametable_x & 0x1);
 			vram_addr.coarse_x    = tram_addr.coarse_x;
 		}
 	}
@@ -723,7 +723,7 @@ public class NesPPU
 		if (mask.render_background > 0 || mask.render_sprites > 0)
 		{
 			vram_addr.fine_y      = tram_addr.fine_y;
-			vram_addr.nametable_y = tram_addr.nametable_y;
+			vram_addr.nametable_y = (byte)(tram_addr.nametable_y & 0x1);
 			vram_addr.coarse_y    = tram_addr.coarse_y;
 		}
 	}
@@ -740,16 +740,16 @@ public class NesPPU
 		// the required bit is always the MSB of the shifter. However, "fine x" scrolling
 		// plays a part in this too, whcih is seen later, so in fact we can choose
 		// any one of the top 8 bits.
-		bg_shifter_pattern_lo = (short)((bg_shifter_pattern_lo & 0xFF00) | bg_next_tile_lsb);
-		bg_shifter_pattern_hi = (short)((bg_shifter_pattern_hi & 0xFF00) | bg_next_tile_msb);
+		bg_shifter_pattern_lo = (ushort)((bg_shifter_pattern_lo & 0xFF00) | bg_next_tile_lsb);
+		bg_shifter_pattern_hi = (ushort)((bg_shifter_pattern_hi & 0xFF00) | bg_next_tile_msb);
 
 		// Attribute bits do not change per pixel, rather they change every 8 pixels
 		// but are synchronised with the pattern shifters for convenience, so here
 		// we take the bottom 2 bits of the attribute word which represent which 
 		// palette is being used for the current 8 pixels and the next 8 pixels, and 
 		// "inflate" them to 8 bit words.
-		bg_shifter_attrib_lo  = (short)((bg_shifter_attrib_lo & 0xFF00) | ((bg_next_tile_attrib & 0b01) > 0 ? 0xFF : 0x00));
-		bg_shifter_attrib_hi  = (short)((bg_shifter_attrib_hi & 0xFF00) | ((bg_next_tile_attrib & 0b10) > 0 ? 0xFF : 0x00));
+		bg_shifter_attrib_lo  = (ushort)((bg_shifter_attrib_lo & 0xFF00) | ((bg_next_tile_attrib & 0b01) > 0 ? 0xFF : 0x00));
+		bg_shifter_attrib_hi  = (ushort)((bg_shifter_attrib_hi & 0xFF00) | ((bg_next_tile_attrib & 0b10) > 0 ? 0xFF : 0x00));
 	}
 
 	// ==============================================================================
@@ -878,10 +878,10 @@ public class NesPPU
                     // All attribute memory begins at 0x03C0 within a nametable, so OR with
                     // result to select target nametable, and attribute byte offset. Finally
                     // OR with 0x2000 to offset into nametable address space on PPU bus.				
-                    bg_next_tile_attrib = ppuRead((ushort)(0x23C0 | (vram_addr.nametable_y << 11) 
-                                                        | (vram_addr.nametable_x << 10) 
-                                                        | ((vram_addr.coarse_y >> 2) << 3) 
-                                                        | (vram_addr.coarse_x >> 2)));
+                    bg_next_tile_attrib = ppuRead((ushort)(0x23C0 | ((vram_addr.nametable_y & 0b1) << 11)
+                                                        | ((vram_addr.nametable_x & 0b1) << 10) 
+                                                        | (((vram_addr.coarse_y >> 2) & 0b111) << 3) 
+                                                        | (vram_addr.coarse_x >> 2) & 0b111));
                     
                     // Right we've read the correct attribute byte for a specified address,
                     // but the byte itself is broken down further into the 2x2 tile groups
@@ -932,7 +932,7 @@ public class NesPPU
                     // "+ 0"                                 : Mental clarity for plane offset
                     // Note: No PPU address bus offset required as it starts at 0x0000
                     bg_next_tile_lsb = ppuRead((ushort)((control.pattern_background << 12) 
-                                            + ((ushort)bg_next_tile_id << 4) 
+                                            + (bg_next_tile_id << 4) 
                                             + vram_addr.fine_y + 0));
 
                     break;
@@ -940,7 +940,7 @@ public class NesPPU
                     // Fetch the next background tile MSB bit plane from the pattern memory
                     // This is the same as above, but has a +8 offset to select the next bit plane
                     bg_next_tile_msb = ppuRead((ushort)((control.pattern_background << 12)
-                                            + ((ushort)bg_next_tile_id << 4)
+                                            + (bg_next_tile_id << 4)
                                             + vram_addr.fine_y + 8));
                     break;
                 case 7:
@@ -1032,8 +1032,9 @@ public class NesPPU
             bg_palette = (byte)((bg_pal1 << 1) | bg_pal0);
         }
 
-
-        texScreen.SetPixel(cycle-1, scanline, GetColourFromPaletteRam(bg_palette, bg_pixel));
+        if (cycle - 1 >= 0 && cycle -1 < 256 && scanline >= 0 && scanline < 240) {
+            texScreen.SetPixel(cycle-1, scanline, GetColourFromPaletteRam(bg_palette, bg_pixel));
+        }
 
         // Advance renderer - it never stops, it's relentless
         cycle++;
@@ -1045,6 +1046,7 @@ public class NesPPU
             {
                 scanline = -1;
                 frame_complete = true;
+                texScreen.Apply();
             }
         }
     }

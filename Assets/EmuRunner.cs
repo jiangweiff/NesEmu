@@ -61,13 +61,13 @@ public class EmuRunner : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // emu.bus.ppu.texScreen.Apply(false);
+        emu.bus.ppu.texScreen.Apply();
         emu.bus.ppu.GetPatternTable(0,0);
         emu.bus.ppu.GetPatternTable(1,0);
 
         if (Input.GetKeyDown(KeyCode.Space)) {
             do {
-                emu.bus.cpu.clock();
+                emu.bus.clock();
              } while(!emu.bus.cpu.IsComplete());
         }
 
@@ -155,7 +155,7 @@ public class EmuRunner : MonoBehaviour
 			string sOffset = $"${nAddr:x4}:";
 			for (int col = 0; col < nColumns; col++)
 			{
-                var v = emu.bus.cpuRead((ushort)nAddr);
+                var v = emu.bus.cpuRead((ushort)nAddr, true);
 				sOffset += $" {v:x2}";
 				nAddr += 1;
 			}

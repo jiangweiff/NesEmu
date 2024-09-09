@@ -14,6 +14,7 @@ public class NesPPU
     Color32[] palScreen = new Color32[0x40];
 
     public Texture2D texScreen = new Texture2D(256, 240, TextureFormat.RGBA32, false);
+    public Color32[] pixelScreen;
     public Texture2D[] texPatternTable = new Texture2D[2] { 
         new Texture2D(128, 128, TextureFormat.RGBA32, false),
         new Texture2D(128, 128, TextureFormat.RGBA32, false),
@@ -207,6 +208,8 @@ public class NesPPU
         palScreen[0x3D] = new Color32(160, 162, 160, 0xFF);
         palScreen[0x3E] = new Color32(0, 0, 0, 0xFF);
         palScreen[0x3F] = new Color32(0, 0, 0, 0xFF);
+
+        pixelScreen = texScreen.GetPixels32();
     }
 
     public Texture2D GetPatternTable(byte i, byte palette)
@@ -1033,7 +1036,10 @@ public class NesPPU
         }
 
         if (cycle - 1 >= 0 && cycle -1 < 256 && scanline >= 0 && scanline < 240) {
+            // pixelScreen[scanline * 256 + cycle - 1] = GetColourFromPaletteRam(bg_palette, bg_pixel);
+            // texScreen.SetPixels32(pixelScreen);
             texScreen.SetPixel(cycle-1, scanline, GetColourFromPaletteRam(bg_palette, bg_pixel));
+            // Debug.Log($"{cycle}, {scanline}");
         }
 
         // Advance renderer - it never stops, it's relentless
@@ -1046,7 +1052,7 @@ public class NesPPU
             {
                 scanline = -1;
                 frame_complete = true;
-                texScreen.Apply();
+                // texScreen.Apply();
             }
         }
     }

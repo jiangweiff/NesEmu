@@ -377,7 +377,7 @@ public class NesCpu
             string sInst = "$" + hex(addr, 4) + ": ";
 
             // Read instruction, and get its readable name
-            byte opcode = read((ushort)addr);
+            byte opcode = read((ushort)addr, true);
             addr++;
             sInst += opLookup[opcode].name + " ";
 
@@ -392,66 +392,66 @@ public class NesCpu
             }
             else if (opLookup[opcode].addrmode == IMM)
             {
-                value = read(addr); addr++;
+                value = read(addr, true); addr++;
                 sInst += "#$" + hex(value, 2) + " {IMM}";
             }
             else if (opLookup[opcode].addrmode == ZP0)
             {
-                lo = read(addr); addr++;
+                lo = read(addr, true); addr++;
                 hi = 0x00;												
                 sInst += "$" + hex(lo, 2) + " {ZP0}";
             }
             else if (opLookup[opcode].addrmode == ZPX)
             {
-                lo = read(addr); addr++;
+                lo = read(addr, true); addr++;
                 hi = 0x00;														
                 sInst += "$" + hex(lo, 2) + ", X {ZPX}";
             }
             else if (opLookup[opcode].addrmode == ZPY)
             {
-                lo = read(addr); addr++;
+                lo = read(addr, true); addr++;
                 hi = 0x00;														
                 sInst += "$" + hex(lo, 2) + ", Y {ZPY}";
             }
             else if (opLookup[opcode].addrmode == IZX)
             {
-                lo = read(addr); addr++;
+                lo = read(addr, true); addr++;
                 hi = 0x00;								
                 sInst += "($" + hex(lo, 2) + ", X) {IZX}";
             }
             else if (opLookup[opcode].addrmode == IZY)
             {
-                lo = read(addr); addr++;
+                lo = read(addr, true); addr++;
                 hi = 0x00;								
                 sInst += "($" + hex(lo, 2) + "), Y {IZY}";
             }
             else if (opLookup[opcode].addrmode == ABS)
             {
-                lo = read(addr); addr++;
-                hi = read(addr); addr++;
+                lo = read(addr, true); addr++;
+                hi = read(addr, true); addr++;
                 sInst += "$" + hex((uint)((hi << 8) | lo), 4) + " {ABS}";
             }
             else if (opLookup[opcode].addrmode == ABX)
             {
-                lo = read(addr); addr++;
-                hi = read(addr); addr++;
+                lo = read(addr, true); addr++;
+                hi = read(addr, true); addr++;
                 sInst += "$" + hex((uint)(hi << 8) | lo, 4) + ", X {ABX}";
             }
             else if (opLookup[opcode].addrmode == ABY)
             {
-                lo = read(addr); addr++;
-                hi = read(addr); addr++;
+                lo = read(addr, true); addr++;
+                hi = read(addr, true); addr++;
                 sInst += "$" + hex((uint)(hi << 8) | lo, 4) + ", Y {ABY}";
             }
             else if (opLookup[opcode].addrmode == IND)
             {
-                lo = read(addr); addr++;
-                hi = read(addr); addr++;
+                lo = read(addr, true); addr++;
+                hi = read(addr, true); addr++;
                 sInst += "($" + hex((uint)(hi << 8) | lo, 4) + ") {IND}";
             }
             else if (opLookup[opcode].addrmode == REL)
             {
-                value = read(addr); addr++;
+                value = read(addr, true); addr++;
                 sInst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "] {REL}";
             }
 
@@ -497,9 +497,9 @@ public class NesCpu
         return bus.cpuRead(a, bReadOnly);
     }
 
-    public byte read(uint a)
+    public byte read(uint a, bool bReadOnly = false)
     {
-        return read((ushort)a);
+        return read((ushort)a, bReadOnly);
     }
 
     void write(ushort a, byte d)

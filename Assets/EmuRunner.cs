@@ -142,7 +142,7 @@ public class EmuRunner : MonoBehaviour
     void OnGUI()
     {
    		DrawRam(2, 2, 0x0000, 16, 16); // ram
-		DrawRam(2, 182, 0x2000, 16, 16); // vram
+		DrawVram(2, 182, 0x2000, 16, 16); // vram
 		// DrawRam(2, 182, 0x8000, 16, 16); // rom
 		DrawCpu(2, 350);
     }
@@ -156,6 +156,23 @@ public class EmuRunner : MonoBehaviour
 			for (int col = 0; col < nColumns; col++)
 			{
                 var v = emu.bus.cpuRead((ushort)nAddr, true);
+				sOffset += $" {v:x2}";
+				nAddr += 1;
+			}
+			GUI.Label(new Rect(nRamX, nRamY, 640, 30), sOffset);
+			nRamY += 10;
+		}
+    }
+
+   	void DrawVram(int x, int y, int nAddr, int nRows, int nColumns)
+    {
+		int nRamX = x, nRamY = y;
+		for (int row = 0; row < nRows; row++)
+		{
+			string sOffset = $"${nAddr:x4}:";
+			for (int col = 0; col < nColumns; col++)
+			{
+                var v = emu.bus.ppu.ppuRead((ushort)nAddr, true);
 				sOffset += $" {v:x2}";
 				nAddr += 1;
 			}

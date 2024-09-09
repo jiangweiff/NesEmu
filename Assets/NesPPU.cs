@@ -413,11 +413,9 @@ public class NesPPU
                 // If set to vertical mode, the increment is 32, so it skips
                 // one whole nametable row; in horizontal mode it just increments
                 // by 1, moving to the next column
-                if (control.increment_mode > 0) {
-                    vram_addr.coarse_y += 1;
-                } else {
-                    vram_addr.coarse_x += 1;
-                }
+                var xxx = vram_addr.DumpToUShort();
+                xxx += (ushort)(control.increment_mode > 0 ? 32 : 1);
+                vram_addr.CopyFromUShort(xxx);                
                 break;
             }
         }
@@ -488,16 +486,14 @@ public class NesPPU
             // If set to vertical mode, the increment is 32, so it skips
             // one whole nametable row; in horizontal mode it just increments
             // by 1, moving to the next column
-            if (control.increment_mode > 0) {
-                vram_addr.coarse_y += 1;
-            } else {
-                vram_addr.coarse_x += 1;
-            }            
+            var xxx = vram_addr.DumpToUShort();
+            xxx += (ushort)(control.increment_mode > 0 ? 32 : 1);
+            vram_addr.CopyFromUShort(xxx);
             break;
         }
     }
 
-    byte ppuRead(ushort addr, bool rdonly = false)
+    public byte ppuRead(ushort addr, bool rdonly = false)
     {
         byte data = 0x00;
         addr &= 0x3FFF;

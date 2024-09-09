@@ -11,6 +11,7 @@ public class EmuRunner : MonoBehaviour
     public RawImage imgScreen, imgPattern1, imgPattern2;
     Transform[] screenpixels;
     Dictionary<KeyCode, int> keyMapper = new Dictionary<KeyCode, int>();
+    bool running = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -66,9 +67,20 @@ public class EmuRunner : MonoBehaviour
         emu.bus.ppu.GetPatternTable(1,0);
 
         if (Input.GetKeyDown(KeyCode.Space)) {
+            running = ! running;
+        }
+
+        if (running) {
+            // do {
+            //     emu.bus.clock();
+            //  } while(!emu.bus.cpu.IsComplete());          
             do {
                 emu.bus.clock();
+             } while(!emu.bus.ppu.frame_complete);
+             do {
+                emu.bus.clock();
              } while(!emu.bus.cpu.IsComplete());
+             emu.bus.ppu.frame_complete = false;
         }
 
         if (Input.GetKeyDown(KeyCode.F)) {

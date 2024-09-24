@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using SFB;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,8 +18,9 @@ public class EmuRunner : MonoBehaviour
     {
         emu.Initialize();
         // Test();
-        var fn = EditorUtility.OpenFilePanel("open rom", "", "");
-        emu.LoadGame(fn);
+        var fn = StandaloneFileBrowser.OpenFilePanel("open rom", "", "", false);
+        // var fn = EditorUtility.OpenFilePanel("open rom", "", "");
+        emu.LoadGame(fn[0]);
 
         imgScreen.texture = emu.bus.ppu.texScreen;
         imgPattern1.texture = emu.bus.ppu.texPatternTable[0];

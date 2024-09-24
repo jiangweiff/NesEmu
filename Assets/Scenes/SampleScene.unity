@@ -232,7 +232,7 @@ MonoBehaviour:
     x: 0
     y: 0
     width: 1
-    height: 1
+    height: -1
 --- !u!222 &415986771
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -453,7 +453,7 @@ MonoBehaviour:
     x: 0
     y: 0
     width: 1
-    height: 1
+    height: -1
 --- !u!222 &1112719974
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -627,7 +627,7 @@ MonoBehaviour:
     x: 0
     y: 0
     width: 1
-    height: 1
+    height: -1
 --- !u!222 &1947029833
 CanvasRenderer:
   m_ObjectHideFlags: 0

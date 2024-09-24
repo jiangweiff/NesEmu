@@ -62,9 +62,9 @@ public class EmuRunner : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        emu.bus.ppu.texScreen.Apply();
-        emu.bus.ppu.GetPatternTable(0,0);
-        emu.bus.ppu.GetPatternTable(1,0);
+        emu.bus.ppu.UpdateScreenTexture();
+        // emu.bus.ppu.GetPatternTable(0,0);
+        // emu.bus.ppu.GetPatternTable(1,0);
 
         if (Input.GetKeyDown(KeyCode.Space)) {
             running = ! running;

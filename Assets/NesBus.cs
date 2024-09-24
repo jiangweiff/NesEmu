@@ -9,6 +9,27 @@ public class NesBus
     uint sysClockCounter = 0;
 	byte[] controller_state = new byte[2];
 
+	// A simple form of Direct Memory Access is used to swiftly
+	// transfer data from CPU bus memory into the OAM memory. It would
+	// take too long to sensibly do this manually using a CPU loop, so
+	// the program prepares a page of memory with the sprite info required
+	// for the next frame and initiates a DMA transfer. This suspends the
+	// CPU momentarily while the PPU gets sent data at PPU clock speeds.
+	// Note here, that dma_page and dma_addr form a 16-bit address in 
+	// the CPU bus address space
+	byte dma_page = 0x00;
+	byte dma_addr = 0x00;
+	byte dma_data = 0x00;
+
+	// DMA transfers need to be timed accurately. In principle it takes
+	// 512 cycles to read and write the 256 bytes of the OAM memory, a
+	// read followed by a write. However, the CPU needs to be on an "even"
+	// clock cycle, so a dummy cycle of idleness may be required
+	bool dma_dummy = true;
+
+	// Finally a flag to indicate that a DMA transfer is happening
+	bool dma_transfer = false;
+
     public NesBus()
     {
         cpu = new NesCpu();
@@ -43,6 +64,13 @@ public class NesBus
             // use bitwise AND operation to mask the bottom 3 bits, 
             // which is the equivalent of addr % 8.
             ppu.cpuWrite((ushort)(addr & 0x0007), data);
+        }
+      	else if (addr == 0x4014)
+        {
+            // A write to this address initiates a DMA transfer
+            dma_page = data;
+            dma_addr = 0x00;
+            dma_transfer = true;						
         }
       	else if (addr >= 0x4016 && addr <= 0x4017)
         {
@@ -105,7 +133,49 @@ public class NesBus
         // have a global counter to keep track of this.
         if (sysClockCounter % 3 == 0)
         {
-            cpu.clock();
+            // Is the system performing a DMA transfer form CPU memory to 
+            // OAM memory on PPU?...
+            if (dma_transfer)
+            {
+                // ...Yes! We need to wait until the next even CPU clock cycle
+                // before it starts...
+                if (dma_dummy)
+                {
+                    // ...So hang around in here each clock until 1 or 2 cycles
+                    // have elapsed...
+                    if (sysClockCounter % 2 == 1)
+                    {
+                        // ...and finally allow DMA to start
+                        dma_dummy = false;
+                    }
+                }
+                else
+                {
+                    // DMA can take place!
+                    if (sysClockCounter % 2 == 0)
+                    {
+                        // On even clock cycles, read from CPU bus
+                        dma_data = cpuRead((ushort)(dma_page << 8 | dma_addr));
+                    }
+                    else
+                    {
+                        // On odd clock cycles, write to PPU OAM
+                        ppu.WritePAM(dma_addr, dma_data);
+                        // Increment the lo byte of the address
+                        dma_addr++;
+                        // If this wraps around, we know that 256
+                        // bytes have been written, so end the DMA
+                        // transfer, and proceed as normal
+                        if (dma_addr == 0x00)
+                        {
+                            dma_transfer = false;
+                            dma_dummy = true;
+                        }
+                    }
+                }
+            } else {
+                cpu.clock();
+            }
         }
 
         // The PPU is capable of emitting an interrupt to indicate the

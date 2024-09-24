@@ -7,7 +7,7 @@ using UnityEngine;
 
 public class Nes
 {
-    public byte[] key = new byte[16];
+    // public byte[] key = new byte[16];
     public NesBus bus;
     NesRom rom;
 

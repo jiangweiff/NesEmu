@@ -4,7 +4,7 @@ public class NesBus
     public NesPPU ppu;
     public NesRom rom;
     public byte[] cpuRam = new byte[2048];
-    byte[] controller = new byte[2];
+    public byte[] controller = new byte[2];
 
     uint sysClockCounter = 0;
 	byte[] controller_state = new byte[2];

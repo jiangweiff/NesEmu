@@ -24,29 +24,17 @@ public class EmuRunner : MonoBehaviour
         imgPattern1.texture = emu.bus.ppu.texPatternTable[0];
         imgPattern2.texture = emu.bus.ppu.texPatternTable[1];
 
-		var mapAsm = emu.bus.cpu.Disassemble(0x0000, 0xFFFF);
-        Debug.Log("a");
+		// var mapAsm = emu.bus.cpu.Disassemble(0x0000, 0xFFFF);
+        // keymapper
+        keyMapper[KeyCode.X] = 0x80;
+        keyMapper[KeyCode.Z] = 0x40;
+        keyMapper[KeyCode.A] = 0x20;
+        keyMapper[KeyCode.S] = 0x10;
 
-        // // initialize screen;
-        // screenpixels = new Transform[64*32];
-        // for(int x = 0; x < 64; ++x) {
-        //     for (int y = 0; y < 32; ++y) {
-        //         screenpixels[y*64+x] = GameObject.Instantiate(cube);
-        //         screenpixels[y*64+x].transform.position = new Vector3(x-32, -(y-16), 0);
-        //     }
-        // }
-        // cube.gameObject.SetActive(false);
-
-        // // keymapper
-        // keyMapper[KeyCode.Alpha1] = 0x1;
-        // keyMapper[KeyCode.Alpha2] = 0x2;
-        // keyMapper[KeyCode.Alpha3] = 0x3;
-        // keyMapper[KeyCode.Alpha4] = 0xC;
-
-        // keyMapper[KeyCode.Q] = 0x4;
-        // keyMapper[KeyCode.W] = 0x5;
-        // keyMapper[KeyCode.E] = 0x6;
-        // keyMapper[KeyCode.R] = 0xD;
+        keyMapper[KeyCode.UpArrow] = 0x08;
+        keyMapper[KeyCode.DownArrow] = 0x04;
+        keyMapper[KeyCode.LeftArrow] = 0x02;
+        keyMapper[KeyCode.RightArrow] = 0x01;
 
         // keyMapper[KeyCode.A] = 0x7;
         // keyMapper[KeyCode.S] = 0x8;
@@ -99,8 +87,9 @@ public class EmuRunner : MonoBehaviour
 
     void UpdateInput()
     {
+        emu.bus.controller[0] = 0;
         foreach(var kv in keyMapper) {
-            emu.key[kv.Value] = (byte)(Input.GetKey(kv.Key) ? 1 : 0);
+            emu.bus.controller[0] |= (byte)(Input.GetKey(kv.Key) ? kv.Value : 0);
         }
     }
 
